@@ -10,230 +10,293 @@ export default function Result() {
   const [places, setPlaces] = useState([]);
   const [itinerary, setItinerary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeDay, setActiveDay] = useState(0);
 
   useEffect(() => {
+    const abortController = new AbortController();
     const fetchAI = async () => {
+      if (!tripCode) return;
       try {
-        const res = await fetch(
-          `http://localhost:5000/api/preferences/recommend/${tripCode}`
-        );
+        setLoading(true);
+        const res = await fetch(`http://localhost:5000/api/preferences/recommend/${tripCode}`, {
+          signal: abortController.signal
+        });
         const data = await res.json();
         setPlaces(data.recommendations || []);
         setItinerary(data.itinerary || null);
       } catch (err) {
-        console.error(err);
+        if (err.name !== 'AbortError') console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    if (tripCode) fetchAI();
+    fetchAI();
+    return () => abortController.abort();
   }, [tripCode]);
 
-  const rankMeta = [
-    { label: "🥈 Runner Up", score: "82%", barW: "w-[82%]", textColor: "text-slate-300", borderColor: "border-white/10", barColor: "bg-slate-400/60", scoreColor: "text-slate-300" },
-    { label: "🥉 Third Place", score: "68%", barW: "w-[68%]", textColor: "text-orange-300", borderColor: "border-white/[0.06]", barColor: "bg-orange-400/60", scoreColor: "text-orange-300" },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#060d1a] text-white flex flex-col justify-between relative overflow-hidden">
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+        
+        .result-page {
+          font-family: 'Poppins', sans-serif;
+          min-height: 100vh;
+          background: #04080f;
+          color: #fff;
+          width: 100%;
+          padding: 0;
+          margin: 0;
+        }
 
-      {/* Background Orbs */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-[500px] h-[500px] rounded-full bg-cyan-400 opacity-[0.08] blur-[100px]" />
-        <div className="absolute -bottom-20 -left-32 w-[400px] h-[400px] rounded-full bg-yellow-400 opacity-[0.08] blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-violet-600 opacity-[0.07] blur-[100px]" />
-      </div>
+        .full-content {
+          width: 100%;
+          padding: 40px 5%;
+          box-sizing: border-box;
+        }
 
-      <div className="relative z-10 px-5 pt-16 pb-16 max-w-2xl mx-auto w-full">
+        /* PODIUM SECTION */
+        .podium-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 25px;
+          margin-bottom: 50px;
+          align-items: end;
+        }
 
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-400/25 rounded-full px-3 py-1 text-[10px] font-bold tracking-[0.15em] text-cyan-400 mb-4">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          AI-POWERED RESULTS
-        </div>
+        .podium-card {
+          background: rgba(13, 25, 41, 0.8);
+          border: 1px solid rgba(6, 182, 212, 0.2);
+          border-radius: 20px;
+          padding: 30px;
+          text-align: center;
+          backdrop-filter: blur(12px);
+          transition: 0.3s;
+        }
 
-        {/* Title */}
-        <h1
-          className="font-black leading-none tracking-tight mb-2 bg-gradient-to-br from-white via-white to-cyan-400 bg-clip-text text-transparent"
-          style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(36px,6vw,60px)", letterSpacing: "0.03em" }}
-        >
-          Your Group's<br />Top Picks
-        </h1>
+        .podium-card.winner {
+          border: 2px solid #ff851b;
+          box-shadow: 0 0 30px rgba(255, 133, 27, 0.2);
+          transform: scale(1.05);
+        }
 
-        <p className="text-[#6b7fa3] text-xs font-light mb-10">
-          Based on everyone's preferences —{" "}
-          <span className="text-cyan-400 font-medium">Trip Code: {tripCode}</span>
-        </p>
+        .podium-rank {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 2px;
+          margin-bottom: 12px;
+          display: block;
+        }
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <div className="w-8 h-8 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
-            <p className="text-[#6b7fa3] text-xs tracking-wider">GENERATING RECOMMENDATIONS...</p>
-          </div>
-        )}
+        .podium-name {
+          font-size: 26px;
+          font-weight: 800;
+          margin: 5px 0;
+        }
 
-        {!loading && places.length > 0 && (
-          <>
-            {/* ── SECTION 1: DESTINATIONS ── */}
+        /* ITINERARY LAYOUT */
+        .itinerary-main-grid {
+          display: grid;
+          grid-template-columns: 320px 1fr;
+          gap: 30px;
+        }
 
-            {/* Winner Card */}
-            <div className="relative mb-3 rounded-2xl border border-yellow-400/30 bg-gradient-to-br from-yellow-400/[0.07] to-cyan-400/[0.04] p-7 overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-yellow-400/20 blur-[50px] pointer-events-none" />
-              <p className="text-[10px] font-bold tracking-[0.18em] text-yellow-400 uppercase mb-2 flex items-center gap-2">
-                <span>🏆</span> Group Pick · Best Match
-              </p>
-              <h2
-                className="leading-none tracking-wide text-yellow-400 mb-4"
-                style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(32px,5vw,54px)" }}
-              >
-                {places[0]}
-              </h2>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-[2px] bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full w-[97%] rounded-full bg-gradient-to-r from-yellow-400 to-cyan-400" />
-                </div>
-                <span className="text-[11px] text-yellow-400/80 font-semibold">97% match</span>
+        @media (max-width: 1024px) {
+          .itinerary-main-grid { grid-template-columns: 1fr; }
+          .podium-card.winner { transform: scale(1); }
+        }
+
+        .glass-panel {
+          background: rgba(13, 25, 41, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 20px;
+          padding: 30px;
+          margin-bottom: 25px;
+        }
+
+        /* DAY TABS */
+        .day-tab {
+          width: 100%;
+          padding: 16px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #94a3b8;
+          cursor: pointer;
+          text-align: left;
+          margin-bottom: 12px;
+          font-size: 15px;
+          font-weight: 600;
+          transition: 0.3s;
+        }
+
+        .day-tab.active {
+          background: #06b6d4;
+          color: #000;
+          border-color: #06b6d4;
+          box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+        }
+
+        .activity-item {
+          padding: 22px;
+          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.02);
+          border-left: 4px solid #06b6d4;
+          margin-bottom: 18px;
+        }
+
+        .activity-time {
+          color: #ff851b;
+          font-size: 13px;
+          font-weight: 900;
+          text-transform: uppercase;
+          margin-bottom: 6px;
+          display: block;
+        }
+
+        /* CYAN GLOW BUTTON */
+        .cyan-btn {
+          display: inline-block;
+          padding: 14px 35px;
+          border-radius: 100px;
+          background: transparent;
+          border: 2px solid #06b6d4;
+          color: #06b6d4;
+          text-decoration: none;
+          font-size: 15px;
+          font-weight: 700;
+          transition: 0.4s;
+          box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
+          margin-top: 40px;
+        }
+
+        .cyan-btn:hover {
+          background: #06b6d4;
+          color: #000;
+          box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+        }
+
+        .loader {
+          width: 50px;
+          height: 50px;
+          border: 4px solid rgba(6, 182, 212, 0.1);
+          border-top: 4px solid #06b6d4;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 100px auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      <div className="result-page">
+        <div className="full-content">
+          
+          {loading ? (
+            <div className="loader" />
+          ) : (
+            <>
+              {/* HEADER SECTION */}
+              <div style={{ textAlign: 'center', marginBottom: '50px' }}>
+                <h2 style={{ 
+                  fontSize: '20px', 
+                  letterSpacing: '6px', 
+                  color: '#06b6d4', 
+                  fontWeight: '900',
+                  textTransform: 'uppercase',
+                  marginBottom: '10px'
+                }}>
+                  Group Voting Results
+                </h2>
+                <p style={{ 
+                  color: '#bdc4c5', 
+                  fontSize: '18px', 
+                  fontWeight: '600', 
+                  opacity: 0.9,
+                  textShadow: '0 0 10px rgba(6, 182, 212, 0.4)'
+                }}>
+                  Trip Code: {tripCode}
+                </p>
               </div>
-            </div>
 
-            {/* Runner-up Cards */}
-            <div className="grid grid-cols-2 gap-3 mb-0">
-              {places.slice(1, 3).map((place, i) => {
-                const meta = rankMeta[i];
-                return (
-                  <div key={i} className={`relative p-5 rounded-xl border bg-[#0c1829] overflow-hidden transition-all hover:-translate-y-1 hover:border-cyan-400/20 ${meta.borderColor}`}>
-                    <span className="absolute top-2 right-3 text-4xl font-black opacity-[0.05] select-none pointer-events-none"
-                      style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
-                      {i + 2}
-                    </span>
-                    <p className={`text-[10px] font-bold tracking-[0.14em] uppercase mb-1.5 ${meta.scoreColor}`}>{meta.label}</p>
-                    <h3 className={`text-3xl font-black leading-none mb-4 tracking-wide ${meta.textColor}`}
-                      style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
-                      {place}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-[2px] bg-white/5 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${meta.barColor} ${meta.barW}`} />
-                      </div>
-                      <span className={`text-[10px] font-semibold opacity-60 ${meta.scoreColor}`}>{meta.score}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* ── SECTION 2: AI ITINERARY ── */}
-            {itinerary && (
-              <div className="mt-12">
-
-                {/* Section Header */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex-1 h-px bg-white/[0.06]" />
-                  <div className="inline-flex items-center gap-1.5 bg-violet-500/10 border border-violet-400/25 rounded-full px-3 py-1 text-[10px] font-bold tracking-[0.15em] text-violet-400">
-                    ✨ AI ITINERARY
-                  </div>
-                  <div className="flex-1 h-px bg-white/[0.06]" />
-                </div>
-
-                {/* Summary Quote */}
-                {itinerary.summary && (
-                  <div className="mb-5 px-5 py-4 rounded-xl bg-[#0c1829] border border-white/[0.06] border-l-4 border-l-violet-500">
-                    <p className="text-[#a0b0c8] text-xs italic leading-relaxed">"{itinerary.summary}"</p>
+              {/* PODIUM SECTION */}
+              <div className="podium-container">
+                {places[1] && (
+                  <div className="podium-card">
+                    <span className="podium-rank" style={{ color: '#94a3b8' }}>🥈 RUNNER UP</span>
+                    <h3 className="podium-name">{places[1]}</h3>
                   </div>
                 )}
 
-                {/* Day Cards */}
-                <div className="space-y-3">
-                  {itinerary.days?.map((day, idx) => (
-                    <div key={idx} className="rounded-xl bg-[#0c1829] border border-white/[0.06] overflow-hidden">
-
-                      {/* Day Header */}
-                      <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.05]">
-                        <div className="w-6 h-6 rounded-full bg-violet-500/20 border border-violet-400/30 flex items-center justify-center text-[10px] font-bold text-violet-400 shrink-0">
-                          {day.day}
-                        </div>
-                        <h4 className="text-sm font-semibold text-white">
-                          {day.title || `Day ${day.day} — Exploration`}
-                        </h4>
-                      </div>
-
-                      {/* Day Body */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 divide-y md:divide-y-0 md:divide-x divide-white/[0.05]">
-
-                        {/* Activities */}
-                        <div className="px-5 py-4">
-                          <p className="text-[10px] font-bold tracking-[0.13em] text-cyan-400 uppercase mb-2">
-                            📍 Activities
-                          </p>
-                          <ul className="space-y-1.5">
-                            {day.activities?.map((act, i) => (
-                              <li key={i} className="flex items-start gap-2 text-xs text-[#a0b0c8] leading-relaxed">
-                                <span className="mt-1.5 w-1 h-1 rounded-full bg-cyan-400/60 shrink-0" />
-                                {act}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Meals */}
-                        {day.meals && (
-                          <div className="px-5 py-4">
-                            <p className="text-[10px] font-bold tracking-[0.13em] text-orange-400 uppercase mb-2">
-                              🍴 Food Suggestions
-                            </p>
-                            <p className="text-xs text-[#a0b0c8] leading-relaxed italic">{day.meals}</p>
-                          </div>
-                        )}
-                      </div>
-
-                    </div>
-                  ))}
+                <div className="podium-card winner">
+                  <span className="podium-rank" style={{ color: '#ff851b' }}>🏆 GROUP'S TOP PICK</span>
+                  <h3 className="podium-name" style={{ fontSize: '34px', color: '#ff851b' }}>{places[0]}</h3>
+                  <div style={{ fontSize: '13px', marginTop: '10px', color: '#06b6d4', fontWeight: '700' }}>ULTIMATE MATCH</div>
                 </div>
+
+                {places[2] && (
+                  <div className="podium-card">
+                    <span className="podium-rank" style={{ color: '#94a3b8' }}>🥉 THIRD PLACE</span>
+                    <h3 className="podium-name">{places[2]}</h3>
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* ── SECTION 3: HOW IT WORKS ── */}
-            <div className="flex items-center gap-3 mt-10 mb-4">
-              <div className="flex-1 h-px bg-white/[0.06]" />
-              <span className="text-[10px] font-bold tracking-[0.18em] text-[#6b7fa3] uppercase">How we picked these</span>
-              <div className="flex-1 h-px bg-white/[0.06]" />
-            </div>
+              {/* ITINERARY SECTION */}
+              {itinerary && (
+                <div className="itinerary-main-grid">
+                  
+                  {/* Sidebar - Just Tabs now */}
+                  <div className="sidebar">
+                    <div className="glass-panel">
+                      <h4 style={{ fontSize: '15px', marginBottom: '25px', color: '#ff851b', letterSpacing: '1px' }}>EXPLORE DAYS</h4>
+                      {itinerary.days?.map((day, idx) => (
+                        <button 
+                          key={idx} 
+                          className={`day-tab ${activeDay === idx ? "active" : ""}`}
+                          onClick={() => setActiveDay(idx)}
+                        >
+                          Day {day.day}: {day.title.split(' ').slice(0,2).join(' ')}...
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { icon: "🧑‍🤝‍🧑", title: "Group Votes", desc: "Everyone's preferences aggregated equally" },
-                { icon: "🤖", title: "Gradient Boosting ML", desc: "Destination scored via trained model" },
-                { icon: "✨", title: "Gemini LLM", desc: "AI narrative & itinerary for the top pick" },
-              ].map((item, i) => (
-                <div key={i} className="p-4 rounded-xl bg-[#0c1829] border border-white/[0.06] text-center">
-                  <div className="text-lg mb-1.5">{item.icon}</div>
-                  <div className="text-[11px] font-semibold text-white mb-1">{item.title}</div>
-                  <div className="text-[10px] text-[#6b7fa3] leading-relaxed">{item.desc}</div>
+                  {/* Main Content Area */}
+                  <div className="itinerary-content">
+                    <div className="glass-panel" style={{ borderTop: '2px solid #06b6d4' }}>
+                      <div style={{ marginBottom: '30px' }}>
+                        <h2 style={{ fontSize: '28px', fontWeight: '800', margin: 0 }}>{itinerary.days[activeDay].title}</h2>
+                        <p style={{ fontSize: '14px', opacity: 0.7, marginTop: '8px', lineHeight: '1.6' }}>{itinerary.summary}</p>
+                      </div>
+
+                      {itinerary.days[activeDay].activities?.map((act, i) => {
+                        const [time, ...desc] = act.split(':');
+                        return (
+                          <div key={i} className="activity-item">
+                            <span className="activity-time">{time}</span>
+                            <p style={{ fontSize: '16px', opacity: 0.9, lineHeight: '1.7', margin: 0 }}>{desc.join(':')}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                 </div>
-              ))}
-            </div>
-          </>
-        )}
+              )}
+            </>
+          )}
 
-        {/* Empty */}
-        {!loading && places.length === 0 && (
-          <p className="text-center text-[#6b7fa3] py-20">No recommendations found.</p>
-        )}
+          {/* BACK BUTTON WITH CYAN BORDER */}
+          <div style={{ textAlign: 'center' }}>
+            <Link to="/" className="cyan-btn">
+              ← PLAN ANOTHER ADVENTURE
+            </Link>
+          </div>
 
-        {/* CTA */}
-        <div className="mt-10 text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-cyan-400/30 bg-cyan-400/[0.06] text-cyan-400 text-xs font-semibold hover:bg-cyan-400/10 hover:border-cyan-400/50 transition-all"
-          >
-            ← Plan another trip
-          </Link>
         </div>
-
+        <Footer />
       </div>
-
-      <Footer />
-    </div>
+    </>
   );
 }

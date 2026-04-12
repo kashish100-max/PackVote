@@ -1,8 +1,5 @@
 import { motion } from "framer-motion";
-import Card from "./Card";
-import ArrowRight from "./ArrowRight";
-import ArrowDown from "./ArrowDown";
-import ArrowLeft from "./ArrowLeft";
+import Pipeline from "./pipeline";
 
 export default function ConceptSection() {
   const steps = [
@@ -79,57 +76,8 @@ export default function ConceptSection() {
         </div>
 
         {/* right content  */}
-<div className="hidden md:flex justify-center w-full">
+        <Pipeline />
 
-  <div className="relative w-[520px] h-[600px]">
-
-    {/* USERS */}
-    <div className="absolute top-0 left-0">
-      <Card emoji="👤" title="Users" sub="Preferences" />
-    </div>
-
-    {/* AI */}
-    <div className="absolute top-0 right-0">
-      <Card emoji="🧠" title="AI" sub="Processing" />
-    </div>
-
-    {/* USERS → AI */}
-    <div className="absolute top-[55px] left-[230px]">
-      <ArrowRight />
-    </div>
-
-    {/* DESTINATION (LEFT - LEVEL 2) */}
-    <div className="absolute top-[200px] left-0">
-      <Card emoji="📍" title="Destination" sub="Best Match" />
-    </div>
-
-    {/* SCORE (RIGHT - SAME LEVEL AS DESTINATION) */}
-    <div className="absolute top-[200px] right-0">
-      <Card emoji="📊" title="Score" sub="Ranking" />
-    </div>
-
-    {/* AI ↓ SCORE */}
-    <div className="absolute top-[130px] right-[110px]">
-      <ArrowDown />
-    </div>
-
-    {/* SCORE → DESTINATION */}
-    <div className="absolute top-[255px] right-[230px]">
-      <ArrowLeft />
-    </div>
-
-    {/* ITINERARY (LEVEL 3 LEFT) */}
-    <div className="absolute top-[400px] left-0">
-      <Card emoji="🗺️" title="Itinerary" sub="Final Plan" />
-    </div>
-
-    {/* DESTINATION ↓ ITINERARY */}
-    <div className="absolute top-[320px] left-[110px]">
-      <ArrowDown />
-    </div>
-
-  </div>
-</div>
       </div>
     </div>
   );
