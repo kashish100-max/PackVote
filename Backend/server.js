@@ -1,25 +1,48 @@
+require("dotenv").config(); // Sabse upar hona chahiye
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
 
+// ===============================
+// MIDDLEWARE
+// ===============================
 app.use(cors());
 app.use(express.json());
 
-// ✅ MongoDB connection
-mongoose.connect("mongodb://127.0.0.1:27017/packvote")
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
+// ===============================
+// ROUTES
+// ===============================
+const preferenceRoutes = require("./routes/preferences");
+app.use("/api/preferences", preferenceRoutes);
 
-// test route
+// ===============================
+// DB CONNECTION
+// ===============================
+// process.env use karne se ye secure ho jata hai
+const dbURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/packvote";
+
+mongoose.connect(dbURI)
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch(err => {
+    console.error("❌ MongoDB Connection Error:", err.message);
+  });
+
+// ===============================
+// TEST ROUTE
+// ===============================
 app.get("/", (req, res) => {
-  res.send("API is working");
+  res.send("PackVote Backend is running 🚀");
 });
 
-// routes
-app.use("/api/preferences", require("./routes/preferences"));
+// ===============================
+// START SERVER
+// ===============================
+// Port hamesha dynamic rakho
+const PORT = process.env.PORT || 5000;
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

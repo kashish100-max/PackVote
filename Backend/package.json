@@ -11,9 +11,12 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^1.49.0",
+    "axios": "^1.15.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "mongoose": "^9.3.1",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "openai": "^6.34.0"
   }
 }

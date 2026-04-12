@@ -1,8 +1,9 @@
-const fetch = (...args) =>
-  import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const express = require("express");
 const router = express.Router();
+const axios = require("axios");
+
 const Preference = require("../models/Preference");
+const { generateItinerary } = require("../services/itineraryService");
 
 // ✅ SAVE DATA
 router.post("/save", async (req, res) => {
@@ -11,7 +12,7 @@ router.post("/save", async (req, res) => {
     await newData.save();
     res.json({ message: "Saved successfully" });
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -21,26 +22,27 @@ router.get("/:tripCode", async (req, res) => {
     const data = await Preference.find({ tripCode: req.params.tripCode });
     res.json(data);
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json({ error: err.message });
   }
 });
 
+// 🚀 MAIN ROUTE: RECOMMEND + ITINERARY
 router.get("/recommend/:tripCode", async (req, res) => {
   try {
     const users = await Preference.find({ tripCode: req.params.tripCode });
 
+    if (!users.length) {
+      return res.status(404).json({ error: "No users found for this trip" });
+    }
+
     let predictions = [];
 
+    // 🔥 CALL ML MODEL FOR EACH USER
     for (let user of users) {
-
-      const response = await fetch("http://127.0.0.1:8000/predict", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+      try {
+        const response = await axios.post("http://127.0.0.1:8000/predict", {
           trip_intent: user.trip_intent,
-          secondary_intent: user.secondary_intent||"None",
+          secondary_intent: user.secondary_intent || "None",
           budget_per_person: Number(user.budget_per_person),
           duration_days: Number(user.duration_days),
           group_type: user.group_type,
@@ -49,31 +51,20 @@ router.get("/recommend/:tripCode", async (req, res) => {
           food_preference: user.food_preference,
           language_comfort: user.language_comfort,
           priority: user.priority
-        })
-      });
+        });
 
-      const text = await response.text();
-      console.log("ML RESPONSE:", text);
-
-      if (!text.startsWith("{")) {
-        console.error("Invalid response from ML");
-        continue;
+        const result = response.data;
+        if (result && result.recommendations) {
+          predictions.push(...result.recommendations);
+        }
+      } catch (mlErr) {
+        console.error("ML Server connection failed for a user:", mlErr.message);
+        // Agar ML server band hai toh hum is user ko skip karenge
       }
-
-      const result = JSON.parse(text);
-
-      if (Array.isArray(result.recommendations)) {
-        predictions.push(...result.recommendations);
-      } else {
-        predictions.push(result.recommendations);
-      }
-
-      console.log(`Updated Predictions List:`, predictions);
     }
 
-    // 🔥 Voting logic
+    // 🔥 VOTING LOGIC (TOP 3)
     const freq = {};
-
     predictions.forEach(place => {
       freq[place] = (freq[place] || 0) + 1;
     });
@@ -83,11 +74,45 @@ router.get("/recommend/:tripCode", async (req, res) => {
       .slice(0, 3)
       .map(item => item[0]);
 
-    res.json({ recommendations: top3 });
+    const bestMatch = top3[0] || "Explore India"; // Fallback if no predictions
+
+    // 🔥 AGGREGATE GROUP DATA FOR LLM
+    const leadUser = users[0];
+    
+    // Average Duration Calculation
+    const totalDuration = users.reduce((sum, u) => sum + Number(u.duration_days), 0);
+    const avgDuration = Math.round(totalDuration / users.length);
+
+    // Average Budget Calculation (Better Context for AI)
+    const totalBudget = users.reduce((sum, u) => sum + Number(u.budget_per_person), 0);
+    const avgBudget = Math.round(totalBudget / users.length);
+
+    // 🤖 GENERATE ITINERARY (LLM)
+    let aiPlan = null;
+    if (bestMatch) {
+      aiPlan = await generateItinerary(bestMatch, {
+        group_type: leadUser.group_type,
+        duration_days: avgDuration,
+        budget_per_person: avgBudget, // Using group average now
+        trip_intent: leadUser.trip_intent,
+        food_preference: leadUser.food_preference
+      });
+    }
+
+    // ✅ FINAL RESPONSE (Matches Result.jsx expectations)
+    res.json({
+      recommendations: top3,
+      itinerary: aiPlan,
+      groupStats: {
+        totalMembers: users.length,
+        avgDuration,
+        avgBudget
+      }
+    });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Something went wrong" });
+    console.error("MAIN ROUTE ERROR:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
