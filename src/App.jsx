@@ -8,6 +8,8 @@ import SmoothScroll from "./SmoothScroll";
 import Success from "./pages/Success";
 import JoinTrip from "./pages/joinTrip";
 
+import ChatBot from "./components/ChatBot";
+
 
 function App() {
   return (
@@ -23,8 +25,7 @@ function App() {
         <Route path="/joinTrip" element={<JoinTrip />} />
       </Routes>
 
-      {/* 2. ChatBot ko yahan add kar -- Routes ke bahar taaki ye har page pe dikhe */}
-      
+      <ChatBot />
     </Router>
   );
 }
