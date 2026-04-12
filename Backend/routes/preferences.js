@@ -39,36 +39,36 @@ router.get("/recommend/:tripCode", async (req, res) => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-  mood: user.mood,
-  budget: Number(user.budget),
-  duration: Number(user.duration),
-  climate: user.climate,
-  travel_style: user.travelStyle,
-
-  food_preference: user.food,
-  distance_preference: user.distance
-})
+          trip_intent: user.trip_intent,
+          secondary_intent: user.secondary_intent||"None",
+          budget_per_person: Number(user.budget_per_person),
+          duration_days: Number(user.duration_days),
+          group_type: user.group_type,
+          climate_preference: user.climate_preference,
+          crowd_preference: user.crowd_preference,
+          food_preference: user.food_preference,
+          language_comfort: user.language_comfort,
+          priority: user.priority
+        })
       });
 
       const text = await response.text();
-console.log("ML RESPONSE:", text);
+      console.log("ML RESPONSE:", text);
 
-if (!text.startsWith("{")) {
-  console.error("Invalid response from ML");
-  continue;
-}
+      if (!text.startsWith("{")) {
+        console.error("Invalid response from ML");
+        continue;
+      }
 
-// ✅ Update this part in your preferences.js
-const result = JSON.parse(text);
+      const result = JSON.parse(text);
 
-// Use spread operator (...) to push individual cities, not the whole array
-if (Array.isArray(result.recommendations)) {
-  predictions.push(...result.recommendations); 
-} else {
-  predictions.push(result.recommendations);
-}
+      if (Array.isArray(result.recommendations)) {
+        predictions.push(...result.recommendations);
+      } else {
+        predictions.push(result.recommendations);
+      }
 
-console.log(`Updated Predictions List:`, predictions);
+      console.log(`Updated Predictions List:`, predictions);
     }
 
     // 🔥 Voting logic
