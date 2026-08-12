@@ -21,7 +21,7 @@ The trained model and preprocessing artifacts are served through a **Flask REST 
 ## Links
 
 - **Live Demo:** https://packvote-project.onrender.com
-- **GitHub:** https://github.com/kashish100-max/PackVote_Project.git
+- **GitHub:** https://github.com/kashish100-max/PackVote.git
 
 
 ## Features
