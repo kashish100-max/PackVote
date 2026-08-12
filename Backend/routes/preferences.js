@@ -160,7 +160,7 @@ router.get("/recommend/:tripCode", async (req, res) => {
     for (let user of users) {
       try {
         const response = await axios.post(
-          "http://127.0.0.1:8000/predict",
+          `${process.env.ML_SERVICE_URL}/predict`,
           {
             trip_intent: user.trip_intent,
             secondary_intent: user.secondary_intent || "None",
