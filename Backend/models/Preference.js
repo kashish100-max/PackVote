@@ -64,7 +64,22 @@ const PreferenceSchema = new mongoose.Schema({
   createdAt: { 
     type: Date, 
     default: Date.now 
+  },
+
+  trip: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Trip",
+    required: true
+  },
+  memberId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true
   }
 });
+
+PreferenceSchema.index(   // it will stop the duplicate preferences document 
+  { trip: 1, memberId: 1 },
+  { unique: true }
+);
 
 module.exports = mongoose.model("Preference", PreferenceSchema);

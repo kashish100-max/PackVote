@@ -12,7 +12,6 @@ export default function Navbar() {
     { name: "About", id: "about" },
     { name: "Working", id: "how" },
     { name: "Why Us", id: "why" },
-    { name: "Team", id: "team" },
   ];
 
   useEffect(() => {

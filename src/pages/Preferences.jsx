@@ -11,12 +11,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+const API_URL =import.meta.env.VITE_API_URL;
 
 
 export default function Preferences() {
-
-  const [tripCode, setTripCode] = useState("");
-  const [name, setName] = useState("");
+  const navigate = useNavigate();
   const [tripIntent, setTripIntent] = useState("");
   const [secondaryIntent, setSecondaryIntent] = useState("");
   const [travelStyle, setTravelStyle] = useState("");
@@ -29,6 +28,7 @@ export default function Preferences() {
   const [languageComfort, setLanguageComfort] = useState("");
   const [priority, setPriority] = useState("");
   const [copied, setCopied] = useState(false);
+  const [tripError, setTripError] = useState("");
 
   // errors only for the 5 important fields
   const [errors, setErrors] = useState({
@@ -48,23 +48,44 @@ export default function Preferences() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const existingCode = queryParams.get("code");
+  const memberIdFromUrl = queryParams.get("memberId");
+  const memberName = queryParams.get("name");
+
+  const [tripCode, setTripCode] = useState(existingCode || "");
+  const [memberId, setMemberId] = useState(memberIdFromUrl || "");
+  const [name, setName] = useState(memberName || "");
 
   useEffect(() => {
-    if (existingCode) {
-      setTripCode(existingCode);
-    } else {
-      const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      setTripCode(newCode);
+  const loadExistingTrip = async () => {
+    try {
+      if (!existingCode) return;
+
+      const response = await fetch(
+        `${API_URL}/api/trips/${existingCode}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Trip not found");
+      }
+
+      setTripCode(data.trip.tripCode);
+
+    } catch (err) {
+      console.error("Trip loading failed:", err);
+      setTripError(err.message);
     }
-  }, [existingCode]);
+  };
+
+  loadExistingTrip();
+}, [existingCode]);
 
   const copyCode = () => {
     navigator.clipboard.writeText(tripCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const navigate = useNavigate();
 
   // Progress tracks only the 5 important fields
   // budget is a slider so always has a value — always counts as filled
@@ -116,8 +137,51 @@ export default function Preferences() {
       return;
     }
 
+    let currentTripCode = tripCode;
+    let currentMemberId = memberId;
+
+    if (!currentTripCode) {
+  if (!name.trim()) {
+    alert("Please enter your name.");
+    return;
+  }
+
+  try {
+    const tripResponse = await fetch(`${API_URL}/api/trips`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: name.trim(),
+      }),
+    });
+
+    const tripData = await tripResponse.json();
+
+    if (!tripResponse.ok) {
+      throw new Error(
+        tripData.message || "Failed to create trip"
+      );
+    }
+
+    currentTripCode = tripData.trip.tripCode;
+    currentMemberId = tripData.trip.memberId;
+
+    setTripCode(currentTripCode);
+    setMemberId(currentMemberId);
+
+  } catch (err) {
+    console.error("Trip creation failed:", err);
+    alert(err.message);
+    return;
+  }
+}
+
     const data = {
-      tripCode, name,
+      tripCode: currentTripCode,
+      memberId: currentMemberId,
+      name,
       trip_intent: tripIntent,
       secondary_intent: secondaryIntent,
       group_type: travelStyle,
@@ -131,13 +195,21 @@ export default function Preferences() {
       priority
     };
 
-    await fetch("http://localhost:5000/api/preferences/save", {
+      const response = await fetch(`${API_URL}/api/preferences/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        result.message || result.error || "Failed to save preferences"
+      );
+    }
     navigate(`/Success?code=${tripCode}`);
   };
+
 
   const fadeUp = {
     hidden: { opacity: 0, y: 40 },
@@ -202,16 +274,39 @@ export default function Preferences() {
         <div className="max-w-3xl mx-auto bg-gradient-to-r from-cyan-400/10 to-blue-500/10 
         border border-cyan-400/20 rounded-2xl p-8 text-center shadow-[0_0_30px_rgba(34,211,238,0.2)]">
           <p className="text-xs text-cyan-400 tracking-widest mb-3">YOUR TRIP CODE</p>
-          <div className="flex justify-center items-center gap-3 text-4xl font-bold tracking-widest">
-            {tripCode}
-            <Copy
-              size={18}
-              onClick={copyCode}
-              className="cursor-pointer opacity-70 hover:opacity-100 hover:text-cyan-400 transition"
-            />
-          </div>
-          {copied && <p className="text-green-400 text-sm mt-2">Copied to clipboard!</p>}
-          <p className="text-gray-400 text-sm mt-3">Share this code with your group</p>
+          {tripError ? (
+  <div className="text-center">
+    <p className="text-red-400 text-lg font-semibold">
+      ⚠️ {tripError}
+    </p>
+
+    <p className="text-gray-400 text-sm mt-2">
+      Please check the trip code and try again.
+    </p>
+  </div>
+) : (
+  <>
+    <div className="flex justify-center items-center gap-3 text-4xl font-bold tracking-widest">
+      {tripCode}
+
+      <Copy
+        size={18}
+        onClick={copyCode}
+        className="cursor-pointer opacity-70 hover:opacity-100 hover:text-cyan-400 transition"
+      />
+    </div>
+
+    {copied && (
+      <p className="text-green-400 text-sm mt-2">
+        Copied to clipboard!
+      </p>
+    )}
+
+    <p className="text-gray-400 text-sm mt-3">
+      Share this code with your group
+    </p>
+  </>
+)}
         </div>
       </div>
 

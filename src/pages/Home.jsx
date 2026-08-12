@@ -3,17 +3,14 @@ import Footer from "../components/Footer";
 import Carousel from "../components/Carousel";
 import { motion } from "framer-motion";
 import { Users, Brain, MapPin } from "lucide-react";
-import Stats from "../components/Stats";
 import WhyCards from "../components/WhyCards";
 import ConceptSection from "../components/ConceptSection";
-import Team from "../components/Team";
 
 export default function Home() {
   return (
     <div>
       <Navbar />
         <Carousel />
-        <Stats />
         <ConceptSection />
 
 <div className="py-28 px-6 md:px-20">
@@ -132,8 +129,6 @@ export default function Home() {
   </p>
 </motion.div>
 </div>
-
-<Team />
       <Footer />
     </div>
   );

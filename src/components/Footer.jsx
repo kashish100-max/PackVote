@@ -55,10 +55,6 @@ export default function Footer() {
                 className="hover:text-cyan-400 cursor-pointer transition">
               Advantage
             </li>
-            <li onClick={() => scrollToSection("team")} 
-                className="hover:text-cyan-400 cursor-pointer transition">
-              Team
-            </li>
           </ul>
         </div>
 

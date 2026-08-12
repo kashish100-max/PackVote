@@ -141,7 +141,7 @@ hover:shadow-[0_0_25px_rgba(249,115,22,0.6)]
 transition duration-300" onClick={() => {
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-  navigate("/preferences", { state: { tripCode: code } });
+  navigate("/createTrip", { state: { tripCode: code } });
 }}>
     Create Trip
   </button>

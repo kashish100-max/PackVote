@@ -29,54 +29,88 @@ export default function ConceptSection() {
 
         <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6">
           Built by{" "}
-          <span className="text-cyan-400">People</span>,  
+          <span className="text-cyan-400">People</span>,{" "}
           Powered by{" "}
-          <span className="text-orange-400">Smart Decisions</span>.
+          <span className="text-orange-400">
+            Smart Decisions
+          </span>.
         </h2>
 
         <p className="text-gray-400 text-lg">
-          PackVote removes the chaos of group travel planning. Everyone shares preferences,
-          and the platform intelligently finds the best common destination — no debates required.
+          PackVote removes the chaos of group travel planning.
+          Everyone shares preferences, and the platform
+          intelligently finds the best common destination —
+          no debates required.
         </p>
+
       </div>
 
-      {/* STEPS */}
-      <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-        {/* left content  */}
-        <div className="space-y-20">
-        {steps.map((step, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 60 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: index * 0.2 }}
-            viewport={{ once: true }}
-            className="flex gap-6 items-start"
-          >
+      {/* MAIN CONTENT */}
+      <div
+        className="
+          max-w-6xl
+          mx-auto
+          px-6
+          flex
+          flex-col
+          md:flex-row
+          gap-16
+          items-center
+          md:items-start
+        "
+      >
 
-            {/* SIDE LINE */}
-            <div className="flex flex-col items-center mt-2">
-              <div className="w-[2px] h-10 bg-cyan-400"></div>
-              <div className="w-[2px] h-10 bg-cyan-400/30"></div>
-            </div>
+        {/* LEFT CONTENT */}
+        <div className="w-full md:w-1/2 space-y-20">
 
-            {/* TEXT */}
-            <div>
-              <h3 className="text-2xl md:text-3xl font-semibold text-white mb-3">
-                {step.title}
-              </h3>
+          {steps.map((step, index) => (
+            <motion.div
+              key={index}
+              initial={{
+                opacity: 0,
+                y: 60,
+              }}
+              whileInView={{
+                opacity: 1,
+                y: 0,
+              }}
+              transition={{
+                duration: 0.6,
+                delay: index * 0.2,
+              }}
+              viewport={{
+                once: true,
+              }}
+              className="flex gap-6 items-start"
+            >
 
-              <p className="text-gray-400 text-lg leading-relaxed max-w-2xl">
-                {step.desc}
-              </p>
-            </div>
+              {/* SIDE LINE */}
+              <div className="flex flex-col items-center mt-2 shrink-0">
+                <div className="w-[2px] h-10 bg-cyan-400"></div>
 
-          </motion.div>
-        ))}
+                <div className="w-[2px] h-10 bg-cyan-400/30"></div>
+              </div>
+
+              {/* TEXT */}
+              <div>
+                <h3 className="text-2xl md:text-3xl font-semibold text-white mb-3">
+                  {step.title}
+                </h3>
+
+                <p className="text-gray-400 text-lg leading-relaxed max-w-2xl">
+                  {step.desc}
+                </p>
+              </div>
+
+            </motion.div>
+          ))}
+
         </div>
 
-        {/* right content  */}
-        <Pipeline />
+        {/* RIGHT / BOTTOM PIPELINE */}
+        <div className="w-full md:w-1/2 flex justify-center">
+          <Pipeline />
+        </div>
 
       </div>
     </div>

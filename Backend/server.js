@@ -1,8 +1,18 @@
-require("dotenv").config(); // Sabse upar hona chahiye
+const dns = require("dns");
+
+dns.setServers([
+  "1.1.1.1",
+  "8.8.8.8"
+]);
+
+require("dotenv").config();
 
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const preferenceRoutes = require("./routes/preferences");
+const tripRouter = require("./routes/trips");
+const chatRoutes = require("./routes/chat");
 
 const app = express();
 
@@ -15,13 +25,13 @@ app.use(express.json());
 // ===============================
 // ROUTES
 // ===============================
-const preferenceRoutes = require("./routes/preferences");
 app.use("/api/preferences", preferenceRoutes);
+app.use("/api/trips", tripRouter);
+app.use("/api/chat", chatRoutes);
 
 // ===============================
 // DB CONNECTION
 // ===============================
-// process.env use karne se ye secure ho jata hai
 const dbURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/packvote";
 
 mongoose.connect(dbURI)
